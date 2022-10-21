@@ -1,0 +1,12 @@
+form {
+    display: flex;
+    flex-direction: column;
+
+    > * {
+        width: 300px;
+    }
+}
+
+.input-error {
+    border-color: rgb(253, 34, 34);
+}
