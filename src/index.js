@@ -22,9 +22,13 @@ const reducer = (state = initialState, action) => {
         uid: action.payload.uid,
         token: action.payload.token,
       }
-    case 'SHOW_USER':
+    case 'REMOVE_USER':
       return {
-        state
+        ...state,
+        email: "",
+        password: "",
+        uid: "",
+        token: "",
       }
     default:
       return state;

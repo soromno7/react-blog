@@ -1,24 +1,60 @@
 import "../styles/loginForm.scss";
 import { useFormik } from 'formik';
-import { loginSchema } from '../schemas/loginSchema';
+import { loginSchema, registerSchema } from '../schemas/login-register-schemas';
 import { useNavigate } from "react-router-dom";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { useDispatch } from "react-redux";
+import { app } from "../firebaseConfig";
 
-export function Form({handleRegister}) {
+export function Form({isRegisterPage}) {
 
-  let navigate = useNavigate();
-    const onSubmit = (values) => {
-      handleRegister(values.email, values.password);
-      handleReset();
-      navigate("/");
+    let navigate = useNavigate();
+
+    const auth = getAuth(app);
+            
+    const dispatch = useDispatch();
+
+    const addUser = (user, password) => {
+      dispatch({type: 'ADD_USER', payload: {
+        email: user.email,
+        password: password,
+        uid: user.uid,
+        token: user.accessToken,
+      }})
     }
 
+    const handleRegister = (email, password) => {
+      (isRegisterPage ? createUserWithEmailAndPassword(auth, email, password) : signInWithEmailAndPassword(auth, email, password))
+        .then(({user}) => {
+            addUser(user, password);
+            navigate("/");
+        })
+        .catch(console.error)
+    }
+
+    const onSubmit = (values) => {
+      console.log(values)
+      handleRegister(values.email, values.password);
+      handleReset();
+    }
+
+    const initialValues = isRegisterPage ?
+    {
+      email: '',
+      password: '',
+      confirmPassword: '',
+    }
+    :
+    {
+      email: '',
+      password: ''
+    }
+
+    const validationSchema = isRegisterPage ? registerSchema : loginSchema;
+
     const {handleChange, handleBlur, touched, values, handleSubmit, errors, handleReset} = useFormik({
-        initialValues: {
-          email: '',
-          password: '',
-          confirmPassword: '',
-        },
-        validationSchema: loginSchema,
+        initialValues,
+        validationSchema,
         onSubmit,
       });
 
@@ -44,17 +80,23 @@ export function Form({handleRegister}) {
             className={errors.password && touched.password ? 'input-error' : ''}
           />
           {errors.password ? <span>{errors.password}</span> : ""}
-          <label>Confirm Password</label>
-          <input
-            id="confirmPassword"
-            type="password"
-            onChange={handleChange}
-            onBlur={handleBlur}
-            value={values.confirmPassword}
-            className={errors.confirmPassword && touched.confirmPassword ? 'input-error' : ''}
-          />
-          {errors.confirmPassword ? <span>{errors.confirmPassword}</span> : ""}
-          <button type="submit" disabled={errors.email || errors.password || errors.confirmPassword}>Submit</button>
+          {isRegisterPage ?
+          <>
+            <label>Confirm Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              onChange={handleChange}
+              onBlur={handleBlur}
+              value={values.confirmPassword}
+              className={errors.confirmPassword && touched.confirmPassword ? 'input-error' : ''}
+            />
+            {errors.confirmPassword ? <span>{errors.confirmPassword}</span> : ""}
+          </>
+          :
+            ""
+          }
+          <button type="submit">Submit</button>
         </form>
       );
 }
